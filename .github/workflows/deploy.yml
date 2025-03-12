@@ -8,20 +8,27 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
+      # 1. Check out your repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # -- FIX: Pass AWS creds & region to amazon-ecr-login --
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
+      # 3. Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          region: us-east-2
+          aws-region: us-east-2
 
+      # 4. Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # 5. Build, Tag, and Push Docker Image
       - name: Build, Tag, and Push Docker Image
         env:
           ECR_REPOSITORY: devhub-backend
@@ -31,13 +38,13 @@ jobs:
           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # 6. Deploy ECS Task Definition
       - name: Deploy ECS Task Definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-
           task-definition: imagedefinitions.json
           service: devhub-backend-service
           cluster: DevHubCluster
