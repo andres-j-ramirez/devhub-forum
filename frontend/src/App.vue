@@ -1,81 +1,26 @@
 <template>
-  <div :class="{ 'dark-mode': isDarkMode }">
-    <header class="app-header">
-      <button @click="toggleDarkMode" class="dark-mode-toggle">
-        {{ isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode' }}
-      </button>
-    </header>
+  <div id="app">
+    <!-- Use the dedicated Navbar component -->
+    <Navbar />
+    <!-- Removed p-4, or replaced with p-0 if you want no padding at all -->
     <main class="app-content">
-      <router-view />
+      <router-view :key="$route.fullPath" />
     </main>
   </div>
 </template>
 
 <script>
+import Navbar from "./components/Navbar.vue";
+
 export default {
-  name: 'App',
-  data() {
-    return {
-      isDarkMode: false,
-    };
-  },
-  methods: {
-    toggleDarkMode() {
-      this.isDarkMode = !this.isDarkMode;
-      localStorage.setItem('darkMode', this.isDarkMode);
-    },
-  },
-  mounted() {
-    const savedMode = localStorage.getItem('darkMode');
-    if (savedMode !== null) {
-      this.isDarkMode = savedMode === 'true';
-    }
-  },
+  name: "App",
+  components: {
+    Navbar
+  }
 };
 </script>
 
 <style>
-/* Global transitions for smooth theme change */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Default (Light Mode) Styles */
-body {
-  background-color: #ffffff;
-  color: #333333;
-}
-
-/* Dark Mode Styles */
-.dark-mode {
-  background-color: #121212;
-  color: #e0e0e0;
-}
-
-/* Header styling */
-.app-header {
-  padding: 1em;
-  display: flex;
-  justify-content: flex-end;
-  background-color: inherit;
-}
-
-/* Toggle button styling */
-.dark-mode-toggle {
-  padding: 0.5em 1em;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.dark-mode-toggle:hover {
-  background-color: #0056b3;
-}
-
-/* Main content styling */
-.app-content {
-  padding: 2em;
-}
+/* We rely on Tailwind's classes for spacing if needed.
+   No forced padding or margin here. */
 </style>
-

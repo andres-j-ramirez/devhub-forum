@@ -1,27 +1,48 @@
 const dotenv = require('dotenv');
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const authRoutes = require("./routes/auth");       // Import your auth routes (auth.js)
-const postRoutes = require("./routes/postRoutes");   // Import the post routes
+dotenv.config(); // Must come before any other config
 
-dotenv.config(); // Load environment variables
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg'); // PostgreSQL client
+
+const authRoutes = require('./routes/auth');
+const postRoutes = require('./routes/postRoutes');
 
 const app = express();
-app.use(express.json()); // To parse JSON requests
-app.use(cors());       // To handle CORS
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected'))
-    .catch((err) => console.error('MongoDB connection error:', err));
+app.use(cors({
+  origin: 'http://localhost:8080', // EXACT frontend URL
+  credentials: true,
+}));
 
-// Use the routes
-app.use("/api/auth", authRoutes);   // Mount the auth routes at /api/auth
-app.use("/api/posts", postRoutes);  // Mount the post routes at /api/posts
+app.use(express.json());
 
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
+// Create a PostgreSQL connection pool using environment variables
+const pool = new Pool({
+  host: process.env.DB_HOST,      // e.g., devhub-postgres.cjgm8c8gyefy.us-east-2.rds.amazonaws.com
+  port: process.env.DB_PORT || 5432,
+  user: process.env.DB_USER,      // e.g., postgres
+  password: process.env.DB_PASSWORD, // your chosen password
+  database: process.env.DB_NAME,  // e.g., devhub
+});
+
+// Test the PostgreSQL connection
+pool.query('SELECT NOW()', (err, result) => {
+  if (err) {
+    console.error('PostgreSQL connection error:', err);
+  } else {
+    console.log('PostgreSQL connected, server time:', result.rows[0].now);
+  }
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
+
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});

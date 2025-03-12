@@ -1,7 +1,19 @@
+/* index.css */
+
+/* Tailwind Base, Components, Utilities */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Global Reset */
+html, body {
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+
+/* Optional: If you want a global .nav-link class, keep it. Otherwise remove. */
 .nav-link {
   @apply text-gray-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-all;
 }

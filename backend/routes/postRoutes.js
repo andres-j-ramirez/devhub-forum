@@ -1,77 +1,173 @@
-const express = require('express');
+/***************************************************************
+ * FULL postRoutes.js using a shared PostgreSQL pool from db.js
+ ***************************************************************/
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const pool = require("../db"); // Import the shared pool from db.js
+
 const router = express.Router();
-const Post = require('../models/Post');
-const Comment = require('../models/Comment');
-const authMiddleware = require('../middleware/authMiddleware'); // Ensure this file exists
 
-// Create a post (already exists)
-router.post('/', authMiddleware, async (req, res) => {
-    try {
-        const newPost = new Post({
-            userId: req.userId,  // Set in authMiddleware after token verification
-            title: req.body.title,
-            content: req.body.content
-        });
-        await newPost.save();
-        res.status(201).json({ message: "Post created successfully!" });
-    } catch (err) {
-        console.error("Error creating post:", err);
-        res.status(500).json({ message: "Server error" });
+/**
+ * Middleware: authenticate
+ * Checks for a valid JWT token in the "Authorization" header.
+ * If valid, attaches the decoded user data to req.user.
+ */
+const authenticate = (req, res, next) => {
+  const authHeader = req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Access denied: No token provided" });
+  }
+  const token = authHeader.replace("Bearer ", "");
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // e.g., { userId: '...', role: '...' }
+    next();
+  } catch (error) {
+    return res.status(400).json({ message: "Invalid token" });
+  }
+};
+
+/**
+ * POST /api/posts
+ * Create a new post (Protected Route)
+ */
+router.post("/", authenticate, async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title || !content) {
+      return res.status(400).json({ message: "Title and content are required" });
     }
+    const insertQuery = `
+      INSERT INTO posts (title, content, author)
+      VALUES ($1, $2, $3)
+      RETURNING id, title, content, author, created_at
+    `;
+    const values = [title, content, req.user.userId];
+    const { rows } = await pool.query(insertQuery, values);
+    const newPost = rows[0];
+    res.status(201).json({ message: "Post created successfully", post: newPost });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// Get all posts (already exists)
-router.get('/', async (req, res) => {
-    try {
-        const posts = await Post.find().sort({ createdAt: -1 });
-        res.status(200).json(posts);
-    } catch (err) {
-        console.error("Error fetching posts:", err);
-        res.status(500).json({ message: "Server error" });
-    }
+/**
+ * GET /api/posts
+ * Retrieve all posts (Public Route)
+ */
+router.get("/", async (req, res) => {
+  try {
+    const selectQuery = `
+      SELECT id, title, content, author, created_at
+      FROM posts
+      ORDER BY created_at DESC
+    `;
+    const { rows } = await pool.query(selectQuery);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error("Error retrieving posts:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// **NEW: Get a specific post by its ID**
-router.get('/:id', async (req, res) => {
-    console.log("Request URL: ", req.originalUrl);  // Debugging
-    try {
-        const post = await Post.findById(req.params.id); // Find the post by its ID
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-        res.status(200).json(post); // Return the post data if found
-    } catch (err) {
-        console.error("Error fetching post:", err);
-        res.status(500).json({ message: "Server error" });
+/**
+ * GET /api/posts/:id
+ * Retrieve a single post by its ID (Public Route)
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const selectQuery = `
+      SELECT id, title, content, author, created_at
+      FROM posts
+      WHERE id = $1
+    `;
+    const { rows } = await pool.query(selectQuery, [postId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
     }
+    res.status(200).json(rows[0]);
+  } catch (error) {
+    console.error("Error retrieving post:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// **NEW: Create a comment for a post**
-router.post('/comment', authMiddleware, async (req, res) => {
-    try {
-        const newComment = new Comment({
-            postId: req.body.postId,  // ID of the post to comment on
-            userId: req.userId,         // Comes from authMiddleware after verifying token
-            content: req.body.content   // The comment content
-        });
-        await newComment.save();
-        res.status(201).json({ message: "Comment created successfully!" });
-    } catch (err) {
-        console.error("Error creating comment:", err);
-        res.status(500).json({ message: "Server error" });
+/**
+ * PUT /api/posts/:id
+ * Update a post (Protected Route)
+ * Only the author can update their own post.
+ */
+router.put("/:id", authenticate, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const { title, content } = req.body;
+    // Fetch the existing post
+    const fetchQuery = `
+      SELECT id, title, content, author, created_at
+      FROM posts
+      WHERE id = $1
+    `;
+    const { rows: postRows } = await pool.query(fetchQuery, [postId]);
+    if (postRows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
     }
+    const existingPost = postRows[0];
+    // Check if the logged-in user is the author
+    if (existingPost.author !== req.user.userId) {
+      return res.status(403).json({ message: "Unauthorized: You can only update your own posts" });
+    }
+    const updatedTitle = title || existingPost.title;
+    const updatedContent = content || existingPost.content;
+    const updateQuery = `
+      UPDATE posts
+      SET title = $1, content = $2
+      WHERE id = $3
+      RETURNING id, title, content, author, created_at
+    `;
+    const { rows: updatedRows } = await pool.query(updateQuery, [updatedTitle, updatedContent, postId]);
+    const updatedPost = updatedRows[0];
+    res.status(200).json({ message: "Post updated successfully", post: updatedPost });
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
-// **NEW: Get comments for a specific post**
-router.get('/:postId/comments', async (req, res) => {
-    try {
-        const comments = await Comment.find({ postId: req.params.postId }).sort({ createdAt: -1 });
-        res.status(200).json(comments);
-    } catch (err) {
-        console.error("Error fetching comments:", err);
-        res.status(500).json({ message: "Server error" });
+/**
+ * DELETE /api/posts/:id
+ * Delete a post (Protected Route)
+ * The user must be the author or have an admin role.
+ */
+router.delete("/:id", authenticate, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    // Fetch the existing post
+    const fetchQuery = `
+      SELECT id, author
+      FROM posts
+      WHERE id = $1
+    `;
+    const { rows: postRows } = await pool.query(fetchQuery, [postId]);
+    if (postRows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
     }
+    const existingPost = postRows[0];
+    // Check if user is the author or has an admin role
+    if (existingPost.author !== req.user.userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized: You cannot delete this post" });
+    }
+    const deleteQuery = `
+      DELETE FROM posts
+      WHERE id = $1
+    `;
+    await pool.query(deleteQuery, [postId]);
+    res.status(200).json({ message: "Post deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 });
 
 module.exports = router;
-

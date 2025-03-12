@@ -1,90 +1,132 @@
 <template>
-    <div class="create-post">
-      <h2>Create New Post</h2>
-      <form @submit.prevent="createPost">
-        <div class="form-group">
-          <label for="title">Title:</label>
-          <input id="title" v-model="title" type="text" required>
+  <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-8">
+    <div class="bg-white dark:bg-gray-800 p-8 rounded shadow-md w-full max-w-lg">
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Create a New Post</h2>
+      <form @submit.prevent="createPost" class="space-y-4">
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="title">Title</label>
+          <input
+            id="title"
+            v-model="title"
+            type="text"
+            required
+            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
+                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          />
         </div>
-        <div class="form-group">
-          <label for="content">Content:</label>
-          <textarea id="content" v-model="content" required></textarea>
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="content">Content</label>
+          <textarea
+            id="content"
+            v-model="content"
+            rows="5"
+            required
+            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
+                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          ></textarea>
         </div>
-        <div class="form-group">
-          <label for="image">Image URL (optional):</label>
-          <input id="image" v-model="image" type="text">
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="image">
+            Image URL (required)
+          </label>
+          <input
+            id="image"
+            v-model="image"
+            type="url"
+            required
+            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
+                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="https://example.com/image.jpg"
+          />
         </div>
-        <button type="submit">Create Post</button>
+        <div>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="articleLink">
+            Article Link (required)
+          </label>
+          <input
+            id="articleLink"
+            v-model="articleLink"
+            type="url"
+            required
+            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
+                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="https://example.com/article"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-green-500 hover:bg-green-600 text-white p-3 rounded"
+        >
+          Create Post
+        </button>
       </form>
+
+      <div v-if="errorMessage" class="text-red-500 mt-4">
+        {{ errorMessage }}
+      </div>
     </div>
-  </template>
-  
-  <script>
-  import api from '../api/axios';
-  
-  export default {
-    name: 'CreatePost',
-    data() {
-      return {
-        title: '',
-        content: '',
-        image: '',
+  </div>
+</template>
+
+<script>
+import { store } from "@/store.js";
+
+export default {
+  name: "CreatePost",
+  data() {
+    return {
+      title: "",
+      content: "",
+      image: "",
+      articleLink: "",
+      errorMessage: ""
+    };
+  },
+  methods: {
+    createPost() {
+      // Basic validation
+      if (!this.title || !this.content || !this.image || !this.articleLink) {
+        this.errorMessage = "All fields are required, including image & link.";
+        return;
+      }
+      // Construct new post
+      const newPost = {
+        _id: Date.now().toString(),
+        title: this.title,
+        content: this.content,
+        excerpt: this.content.slice(0, 80) + "...",
+        image: this.image,
+        articleUrl: this.articleLink,
+        createdAt: new Date().toISOString(),
+        category: "Cloud",
+        likes: 0,
+        liked: false,
+        comments: [],
+        newComment: "",
+        showComments: false
       };
-    },
-    methods: {
-      async createPost() {
-        try {
-          const payload = {
-            title: this.title,
-            content: this.content,
-            image: this.image || undefined,
-          };
-          const response = await api.post('/posts', payload);
-          // After creating, navigate to the newly created post's view
-          this.$router.push(`/post/${response.data._id}`);
-        } catch (err) {
-          console.error('Error creating post:', err);
-        }
-      },
-    },
-  };
-  </script>
-  
-  <style scoped>
-  .create-post {
-    padding: 2em;
+
+      // Add to store.feed
+      store.feed.push(newPost);
+      // Also add to user’s posts
+      store.user.posts.push(newPost);
+
+      // Clear form
+      this.title = "";
+      this.content = "";
+      this.image = "";
+      this.articleLink = "";
+      this.errorMessage = "";
+
+      // Redirect to feed
+      this.$router.push("/feed");
+    }
   }
-  
-  .form-group {
-    margin-bottom: 1em;
-  }
-  
-  label {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 0.5em;
-  }
-  
-  input,
-  textarea {
-    width: 100%;
-    padding: 0.5em;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  button {
-    padding: 0.5em 1em;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-  }
-  
-  button:hover {
-    background-color: #218838;
-  }
-  </style>
-  
-  
+};
+</script>
+
+<style scoped>
+/* Keep your original styling for light mode. 
+   The .dark overrides are minimal. */
+</style>
