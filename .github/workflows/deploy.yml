@@ -28,11 +28,11 @@ jobs:
           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Update ECS Service
-        uses: aws-actions/amazon-ecs-update-service@v1.1.0
+      - name: Deploy ECS Task Definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          cluster: DevHubCluster
+          task-definition: imagedefinitions.json
           service: devhub-backend-service
-          task-definition: DevHubTask
+          cluster: DevHubCluster
           wait-for-service-stability: true
           region: us-east-2

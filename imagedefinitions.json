@@ -1,0 +1,7 @@
+[
+    {
+      "name": "devhub-backend",
+      "imageUri": "911167909056.dkr.ecr.us-east-2.amazonaws.com/devhub-backend:latest"
+    }
+  ]
+  
