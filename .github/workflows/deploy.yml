@@ -39,7 +39,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
-          task-definition: imagedefinitions.json
+          image-definition: imagedefinitions.json
           service: devhub-backend-service
           cluster: DevHubCluster
           wait-for-service-stability: true
