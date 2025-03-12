@@ -33,11 +33,13 @@ jobs:
           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Deploy ECS Task Definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: "DevHubTask"
-          image-definitions: imagedefinitions.json
-          service: devhub-backend-service
-          cluster: DevHubCluster
-          wait-for-service-stability: true
+        - name: Deploy ECS Task Definition
+          uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+          with:
+            task-definition: ecs-task-def.json      # local JSON file
+            container-image-name: devhub-backend    # name of the container in the JSON
+            container-image-uri: 911167909056.dkr.ecr.us-east-2.amazonaws.com/devhub-backend:latest
+            service: devhub-backend-service
+            cluster: DevHubCluster
+            wait-for-service-stability: true
+        
