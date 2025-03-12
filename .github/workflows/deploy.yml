@@ -1,0 +1,38 @@
+name: Build and Deploy DevHub Backend
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          region: us-east-2
+
+      - name: Build, Tag, and Push Docker Image
+        env:
+          ECR_REPOSITORY: devhub-backend
+          ECR_REGISTRY: 911167909056.dkr.ecr.us-east-2.amazonaws.com
+        run: |
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Update ECS Service
+        uses: aws-actions/amazon-ecs-update-service@v1
+        with:
+          cluster: DevHubCluster
+          service: devhub-backend-service
+          task-definition: DevHubTask
+          wait-for-service-stability: true
+          region: us-east-2
