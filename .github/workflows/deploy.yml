@@ -36,3 +36,4 @@ jobs:
           cluster: DevHubCluster
           wait-for-service-stability: true
           region: us-east-2
+# Trigger new run
