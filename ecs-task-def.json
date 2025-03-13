@@ -1,89 +1,82 @@
 {
-    "family": "DevHubTask",
-    "networkMode": "awsvpc",
-    "executionRoleArn": "arn:aws:iam::911167909056:role/ecsTaskExecutionRole",
-    "containerDefinitions": [
-      {
-        "name": "devhub-backend",
-        "image": "911167909056.dkr.ecr.us-east-2.amazonaws.com/devhub-backend:latest",
-        "cpu": 0,
-        "portMappings": [
-          {
-            "name": "devhub-backend-5001-tcp",
-            "containerPort": 5001,
-            "hostPort": 5001,
-            "protocol": "tcp",
-            "appProtocol": "http"
-          }
-        ],
-        "essential": true,
-        "environment": [
-          {
-            "name": "DB_PORT",
-            "value": "5432"
-          },
-          {
-            "name": "JWT_SECRET",
-            "value": "hellomoto"
-          },
-          {
-            "name": "DB_USER",
-            "value": "postgres"
-          },
-          {
-            "name": "PGSSLMODE",
-            "value": "require"
-          },
-          {
-            "name": "NODE_TLS_REJECT_UNAUTHORIZED",
-            "value": "0"
-          },
-          {
-            "name": "DB_NAME",
-            "value": "devhub"
-          },
-          {
-            "name": "DB_HOST",
-            "value": "devhub-postgres.cjgm8c8gyefy.us-east-2.rds.amazonaws.com"
-          },
-          {
-            "name": "DB_PASSWORD",
-            "value": "R1VcDzZoTm1JPPCVPXCh"
-          }
-        ],
-        "environmentFiles": [],
-        "mountPoints": [],
-        "volumesFrom": [],
-        "ulimits": [],
-        "logConfiguration": {
-          "logDriver": "awslogs",
-          "options": {
-            "awslogs-group": "/ecs/DevHubTask",
-            "mode": "non-blocking",
-            "awslogs-create-group": "true",
-            "max-buffer-size": "25m",
-            "awslogs-region": "us-east-2",
-            "awslogs-stream-prefix": "ecs"
-          },
-          "secretOptions": []
+  "family": "DevHubTask",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::911167909056:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "devhub-backend",
+      "image": "911167909056.dkr.ecr.us-east-2.amazonaws.com/devhub-backend:latest",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "name": "devhub-backend-5001-tcp",
+          "containerPort": 5001,
+          "hostPort": 5001,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "DB_PORT",
+          "value": "5432"
         },
-        "healthCheck": {
-          "command": [
-            "CMD-SHELL",
-            "curl -f http://localhost:5001/health || exit 1"
-          ],
-          "interval": 30,
-          "timeout": 5,
-          "retries": 3,
-          "startPeriod": 30
+        {
+          "name": "JWT_SECRET",
+          "value": "hellomoto"
         },
-        "systemControls": []
+        {
+          "name": "DB_USER",
+          "value": "postgres"
+        },
+        {
+          "name": "PGSSLMODE",
+          "value": "require"
+        },
+        {
+          "name": "NODE_TLS_REJECT_UNAUTHORIZED",
+          "value": "0"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "devhub"
+        },
+        {
+          "name": "DB_HOST",
+          "value": "devhub-postgres.cjgm8c8gyefy.us-east-2.rds.amazonaws.com"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "value": "R1VcDzZoTm1JPPCVPXCh"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/DevHubTask",
+          "mode": "non-blocking",
+          "awslogs-create-group": "true",
+          "max-buffer-size": "25m",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:5001/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
       }
-    ],
-    "requiresCompatibilities": [
-      "FARGATE"
-    ],
-    "cpu": "256",
-    "memory": "512"
-  }
-  
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512"
+}
