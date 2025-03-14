@@ -41,7 +41,6 @@ To run DevHub Forum locally:
 
 ### Clone the Repository
 
-```bash
 git clone https://github.com/andres-j-ramirez/devhub-forum.git
 cd devhub-forum
 Set Up the Backend
@@ -120,6 +119,3 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 Final Note
 DevHub Forum is a comprehensive demonstration of modern cloud‑native development practices. The project leverages Docker and AWS ECS Fargate for containerization and orchestration, Terraform for infrastructure as code, and GitHub Actions for continuous deployment. This repository includes both the application code and the infrastructure configuration, showcasing an end‑to‑end cloud engineering solution.
-
-pgsql
-Copy
