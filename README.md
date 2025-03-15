@@ -12,12 +12,13 @@
 2. [Architecture Diagram](#architecture-diagram)
 3. [Local Development](#local-development)
 4. [Production Deployment on AWS](#production-deployment-on-aws)
-5. [CI/CD Workflow (GitHub Actions)](#cicd-workflow-github-actions)
-6. [Environment Variables](#environment-variables)
-7. [Troubleshooting & Optimization](#troubleshooting--optimization)
-8. [Future Improvements](#future-improvements)
-9. [License](#license)
-10. [Final Note](#final-note)
+5. [Security & Monitoring](#security--monitoring)
+6. [CI/CD Workflow (GitHub Actions)](#cicd-workflow-github-actions)
+7. [Environment Variables](#environment-variables)
+8. [Troubleshooting & Optimization](#troubleshooting--optimization)
+9. [Future Improvements](#future-improvements)
+10. [License](#license)
+11. [Final Note](#final-note)
 
 ---
 
@@ -103,6 +104,24 @@ bash:
 Copy
 terraform apply -var-file="env/dev.tfvars"
 Review the plan and confirm to provision the AWS resources.
+
+---
+
+## Security & Monitoring
+
+DevHub Forum incorporates best-in-class security and monitoring practices:
+
+- **IAM Roles & Security Groups:**  
+  IAM roles are configured with the principle of least privilege. Security groups enforce strict rules, ensuring only authorized traffic between ECS tasks, ALB, and RDS.
+
+- **Encryption:**  
+  Data stored in RDS and S3 is encrypted at rest using AWS KMS (Key Management Service).
+
+- **CloudWatch Dashboards:**  
+  Custom dashboards and alerts are configured in AWS CloudWatch to proactively monitor:
+  - ECS: CPU utilization, memory usage, task counts.
+  - ALB: Request counts, latency, and error rates.
+  - RDS: Database health metrics, such as CPU and storage usage.
 
 ---
 
