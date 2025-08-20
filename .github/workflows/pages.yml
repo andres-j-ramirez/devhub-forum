@@ -12,10 +12,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    environment:
+      name: github-pages
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
-      - uses: actions/deploy-pages@v4
+      - id: deploy
+        uses: actions/deploy-pages@v4
