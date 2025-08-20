@@ -187,3 +187,6 @@ This project is licensed under the MIT License.
 DevHub Forum is a comprehensive demonstration of modern cloud‑native development practices. The project leverages Docker and AWS ECS Fargate for containerization and orchestration, Terraform for Infrastructure as Code, and GitHub Actions for continuous deployment. This repository includes both the application code and the infrastructure configuration, serving as a case study for end‑to‑end cloud engineering solutions.
 
 For more details, please refer to the accompanying case study and blog post published on my website.
+**Live Demo:** https://andres-j-ramirez.github.io/devhub-forum/login
+
+Demo user — Email: `test@example.com`  Password: `devhub`
