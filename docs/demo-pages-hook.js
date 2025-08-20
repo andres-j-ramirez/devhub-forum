@@ -12,29 +12,45 @@
     el.textContent = msg;
   }
 
-  // Intercept ANY form submit; if it looks like the login form, handle it
+  function handleAttempt(root) {
+    const form = root.closest("form") || document;
+    const emailInput = document.querySelector('input[type="email"], input[name="email"]');
+    const passInput  = document.querySelector('input[type="password"], input[name="password"]');
+    if (!emailInput || !passInput) return false;
+
+    const email = (emailInput.value || "").trim().toLowerCase();
+    const pass  = passInput.value || "";
+
+    if (email === "test@example.com" && pass === "devhub") {
+      try { localStorage.setItem("token", "demo"); } catch (_) {}
+      const base = (document.querySelector("base")?.href || "/devhub-forum/");
+      location.href = base + "#/feed";
+      return true;
+    }
+    showError(form, "Login failed. Use test@example.com / devhub");
+    return true; // we handled it (wrong creds)
+  }
+
+  // Intercept ANY form submit on the page
   document.addEventListener("submit", function (e) {
     try {
-      const form = e.target;
-      const emailInput = form.querySelector('input[type="email"], input[name="email"]');
-      const passInput  = form.querySelector('input[type="password"], input[name="password"]');
-      const submitText = (form.querySelector('button[type="submit"], button, input[type="submit"]')?.textContent || "").trim().toLowerCase();
-
-      // Heuristic: has email+password inputs AND a "log in" button
-      if (emailInput && passInput && /log\s*in/.test(submitText)) {
+      // Heuristic: if the form has email + password fields, treat as login
+      if (e.target.querySelector('input[type="email"], input[name="email"]') &&
+          e.target.querySelector('input[type="password"], input[name="password"]')) {
         e.preventDefault();
-
-        const email = (emailInput.value || "").trim().toLowerCase();
-        const pass  = passInput.value || "";
-
-        if (email === "test@example.com" && pass === "devhub") {
-          try { localStorage.setItem("token", "demo"); } catch (_) {}
-          const base = (document.querySelector("base")?.href || "/devhub-forum/");
-          location.href = base + "#/feed";
-        } else {
-          showError(form, "Login failed. Use test@example.com / devhub");
-        }
+        handleAttempt(e.target);
       }
     } catch (_) {}
+  }, true);
+
+  // Also catch clicks on a "Log In" button that isn't type=submit
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest('button, input[type="submit"]');
+    if (!btn) return;
+    const text = (btn.textContent || btn.value || "").toLowerCase();
+    if (/log\s*in/.test(text)) {
+      e.preventDefault();
+      handleAttempt(btn);
+    }
   }, true);
 })();
