@@ -1,56 +1,31 @@
-(function () {
-  if (!location.hostname.endsWith("github.io")) return;
-
-  function showError(form, msg) {
-    let el = form.querySelector(".demo-login-error");
-    if (!el) {
-      el = document.createElement("div");
-      el.className = "demo-login-error";
-      el.style.cssText = "margin-top:8px;color:#e11d48;font-size:12px";
-      form.appendChild(el);
-    }
-    el.textContent = msg;
+(function(){
+  var base="/devhub-forum/";
+  function goFeed(){ try{localStorage.setItem("token","demo")}catch(e){}; location.replace(base+"#/feed"); }
+  function isLoginForm(f){
+    if(!f) return false;
+    var action=(f.getAttribute("action")||"").toLowerCase();
+    return /login/.test(location.pathname) || /login/.test(location.hash) || /login/.test(action) || (document.querySelector("h1,h2,h3")||{}).textContent?.toLowerCase().includes("log in");
   }
-
-  function handleAttempt(root) {
-    const form = root.closest("form") || document;
-    const emailInput = document.querySelector('input[type="email"], input[name="email"]');
-    const passInput  = document.querySelector('input[type="password"], input[name="password"]');
-    if (!emailInput || !passInput) return false;
-
-    const email = (emailInput.value || "").trim().toLowerCase();
-    const pass  = passInput.value || "";
-
-    if (email === "test@example.com" && pass === "devhub") {
-      try { localStorage.setItem("token", "demo"); } catch (_) {}
-      const base = (document.querySelector("base")?.href || "/devhub-forum/");
-      location.href = base + "#/feed";
-      return true;
+  window.addEventListener("submit",function(e){
+    if(isLoginForm(e.target)){
+      e.preventDefault(); e.stopImmediatePropagation();
+      goFeed();
+      return false;
     }
-    showError(form, "Login failed. Use test@example.com / devhub");
-    return true; // we handled it (wrong creds)
-  }
-
-  // Intercept ANY form submit on the page
-  document.addEventListener("submit", function (e) {
-    try {
-      // Heuristic: if the form has email + password fields, treat as login
-      if (e.target.querySelector('input[type="email"], input[name="email"]') &&
-          e.target.querySelector('input[type="password"], input[name="password"]')) {
-        e.preventDefault();
-        handleAttempt(e.target);
-      }
-    } catch (_) {}
-  }, true);
-
-  // Also catch clicks on a "Log In" button that isn't type=submit
-  document.addEventListener("click", function (e) {
-    const btn = e.target.closest('button, input[type="submit"]');
-    if (!btn) return;
-    const text = (btn.textContent || btn.value || "").toLowerCase();
-    if (/log\s*in/.test(text)) {
-      e.preventDefault();
-      handleAttempt(btn);
+  },true);
+  window.addEventListener("click",function(e){
+    var b=e.target.closest('button[type="submit"],input[type="submit"]');
+    if(b){
+      var f=b.form || document.querySelector("form");
+      if(isLoginForm(f)){ e.preventDefault(); e.stopImmediatePropagation(); goFeed(); return false; }
     }
-  }, true);
+  },true);
+  document.addEventListener("DOMContentLoaded",function(){
+    if(location.pathname===base && (!location.hash || location.hash==="#" )){ location.replace(base+"#/login"); return; }
+    var link=document.createElement("a");
+    link.href=base+"#/feed"; link.textContent="Demo: Auto-Login";
+    link.style.cssText="position:fixed;right:12px;bottom:12px;z-index:9999;padding:8px 10px;border-radius:8px;background:#2563eb;color:#fff;text-decoration:none;font:500 12px/1 sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.15)";
+    link.onclick=function(e){ e.preventDefault(); goFeed(); };
+    document.body.appendChild(link);
+  });
 })();
