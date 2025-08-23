@@ -1,24 +1,39 @@
-// src/api/axios.js
-import axios from "axios";
-
-// On GitHub Pages, keep requests on the same origin.
-// Anywhere else, use env or fallback to local dev API.
-const base =
-  (typeof window !== "undefined" && /\.github\.io$/.test(window.location.hostname))
-    ? ""                           // same-origin on Pages
-    : (process.env.VUE_APP_API_BASE || "http://localhost:5001");
-
-const api = axios.create({
-  baseURL: base,
-  withCredentials: false,
-});
-
 // --- Demo mock just for GitHub Pages ---
 const onPages =
   typeof window !== "undefined" && /\.github\.io$/.test(window.location.hostname);
 
 if (onPages) {
-  // Intercept requests and, for certain endpoints, *return a fake response*
+  // in-memory demo data (keeps pages working with no backend)
+  const demoPosts = [
+    {
+      id: 1,
+      title: "Welcome to DevHub (Demo)",
+      body: "This is a static demo running on GitHub Pages.",
+      author: "Admin",
+      image: "https://picsum.photos/seed/devhub1/800/400",
+      createdAt: new Date().toISOString(),
+      category: "Tech News",
+      likes: 15,
+      comments: [],
+    },
+    {
+      id: 2,
+      title: "Tip: Dark Mode",
+      body: "Use the switch in the navbar to toggle themes.",
+      author: "Admin",
+      image: "https://picsum.photos/seed/devhub2/800/400",
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      category: "Cloud",
+      likes: 8,
+      comments: [],
+    },
+  ];
+
+  function findPost(id) {
+    const nid = Number(id);
+    return demoPosts.find(p => p.id === nid);
+  }
+
   api.interceptors.request.use((config) => {
     const method = (config.method || "get").toLowerCase();
     const url = config.url || "";
@@ -30,13 +45,11 @@ if (onPages) {
     }
     data = data || {};
 
-    // Mock: POST /api/auth/login
+    // --- Auth: POST /api/auth/login ---
     if (/\/api\/auth\/login\b/.test(url) && method === "post") {
       const u = (data.email || "").toLowerCase();
-      const p = (data.password || "");
+      const p = data.password || "";
       const ok = (u === "test@example.com" && p === "devhub");
-
-      // We *reject* with a marker, then turn that into a resolved response below.
       return Promise.reject({
         __mock: true,
         response: ok
@@ -45,35 +58,52 @@ if (onPages) {
       });
     }
 
-    // Mock: GET /api/posts
-    if (/\/api\/posts\b/.test(url) && method === "get") {
+    // --- Feed: GET /api/posts ---
+    if (/\/api\/posts\b$/.test(url) && method === "get") {
       return Promise.reject({
         __mock: true,
-        response: {
-          status: 200,
-          data: {
-            posts: [
-              {
-                id: 1,
-                title: "Welcome to DevHub (Demo)",
-                body: "This is a static demo running on GitHub Pages.",
-                author: "Admin",
-                createdAt: new Date().toISOString(),
-              },
-              {
-                id: 2,
-                title: "Tip: Dark Mode",
-                body: "Use the switch in the navbar to toggle themes.",
-                author: "Admin",
-                createdAt: new Date().toISOString(),
-              },
-            ],
-          },
-        },
+        response: { status: 200, data: { posts: demoPosts } },
       });
     }
 
-    // Otherwise, let it through (e.g., when you run with a real backend)
+    // --- Single post: GET /api/posts/:id ---
+    const postIdMatch = url.match(/\/api\/posts\/(\d+)\b/);
+    if (postIdMatch && method === "get") {
+      const post = findPost(postIdMatch[1]);
+      return Promise.reject({
+        __mock: true,
+        response: post
+          ? { status: 200, data: post }
+          : { status: 404, data: { error: "not_found" } },
+      });
+    }
+
+    // --- Add comment: POST /api/posts/:id/comments ---
+    const cmMatch = url.match(/\/api\/posts\/(\d+)\/comments\b/);
+    if (cmMatch && method === "post") {
+      const post = findPost(cmMatch[1]);
+      if (!post) {
+        return Promise.reject({
+          __mock: true,
+          response: { status: 404, data: { error: "not_found" } },
+        });
+      }
+      const text = (data && data.text || "").trim();
+      if (!text) {
+        return Promise.reject({
+          __mock: true,
+          response: { status: 400, data: { error: "empty_comment" } },
+        });
+      }
+      const newItem = { id: Date.now(), author: "You", text };
+      post.comments.push(newItem);
+      return Promise.reject({
+        __mock: true,
+        response: { status: 201, data: newItem },
+      });
+    }
+
+    // Otherwise, let it through to a real backend (local/prod)
     return config;
   });
 
@@ -85,5 +115,3 @@ if (onPages) {
       : Promise.reject(err)
   );
 }
-
-export default api;
