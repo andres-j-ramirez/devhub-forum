@@ -1,21 +1,19 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-10">
     <div class="max-w-4xl mx-auto px-4">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-        Latest Posts
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">Latest Posts</h1>
 
       <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <input
           v-model="searchQuery"
-          @input="filterPosts"
+          @input="noop"
           type="text"
           placeholder="Search posts..."
           class="w-full md:w-1/2 p-3 border rounded dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
         />
         <select
           v-model="sortOption"
-          @change="filterPosts"
+          @change="noop"
           class="w-full md:w-1/3 p-3 border rounded dark:border-gray-600 dark:bg-gray-800 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="date-new">Date: Newest First</option>
@@ -24,43 +22,32 @@
         </select>
         <select
           v-model="selectedCategory"
-          @change="filterPosts"
+          @change="noop"
           class="w-full md:w-1/4 p-3 border rounded dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
         >
           <option value="">All Categories</option>
-          <option v-for="cat in categories" :key="cat" :value="cat">
-            {{ cat }}
-          </option>
+          <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
       </div>
 
-      <div v-if="loading" class="text-center text-gray-500">
-        Loading posts...
-      </div>
+      <div v-if="loading" class="text-center text-gray-500">Loading posts...</div>
 
       <div v-else>
         <div
           v-for="post in sortedPosts"
-          :key="post._id"
+          :key="post._id || post.id"
           class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 transition-transform duration-200 hover:scale-[1.02] hover:shadow-lg"
         >
-          <img
-            v-if="post.image"
-            :src="post.image"
-            alt="Post Image"
-            class="w-full h-48 object-cover rounded mb-4"
-          />
+          <img v-if="post.image" :src="post.image" alt="Post" class="w-full h-48 object-cover rounded mb-4" />
           <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-            <a :href="post.articleUrl" target="_blank" rel="noopener" class="hover:underline">
+            <a :href="post.articleUrl || '#'" target="_blank" rel="noopener" class="hover:underline">
               {{ post.title }}
             </a>
           </h2>
-          <p class="text-gray-600 dark:text-gray-300 mb-4">
-            {{ post.excerpt }}
-          </p>
+          <p class="text-gray-600 dark:text-gray-300 mb-4">{{ post.excerpt || post.body }}</p>
 
           <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-            <div>Posted on {{ formatDate(post.createdAt) }}</div>
+            <div>Posted on {{ formatDate(post.createdAt || new Date()) }}</div>
             <div class="flex items-center space-x-4">
               <div
                 class="flex items-center space-x-1 cursor-pointer"
@@ -68,15 +55,12 @@
                 @click="toggleLike(post)"
               >
                 <i class="fas fa-thumbs-up"></i>
-                <span>{{ post.likes }}</span>
+                <span>{{ post.likes ?? 0 }}</span>
                 <span class="ml-1 text-xs">Likes</span>
               </div>
-              <div
-                class="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
-                @click="toggleComments(post)"
-              >
+              <div class="flex items-center space-x-1 cursor-pointer hover:text-blue-600" @click="toggleComments(post)">
                 <i class="fas fa-comment"></i>
-                <span>{{ post.comments.length }}</span>
+                <span>{{ (post.comments && post.comments.length) || 0 }}</span>
                 <span class="ml-1 text-xs">Comments</span>
               </div>
             </div>
@@ -84,12 +68,10 @@
 
           <div v-if="post.showComments" class="mt-4 border-t border-gray-300 dark:border-gray-700 pt-4">
             <div class="mb-2 font-semibold text-gray-700 dark:text-gray-200">Comments</div>
-
-            <div v-for="comment in post.comments" :key="comment._id" class="mb-2">
-              <strong class="text-gray-800 dark:text-gray-100">{{ comment.author }}:</strong>
-              <span class="text-gray-600 dark:text-gray-300"> {{ comment.text }} </span>
+            <div v-for="c in post.comments || []" :key="c._id || c.id" class="mb-2">
+              <strong class="text-gray-800 dark:text-gray-100">{{ c.author || 'User' }}:</strong>
+              <span class="text-gray-600 dark:text-gray-300"> {{ c.text }}</span>
             </div>
-
             <div class="mt-3 flex space-x-2">
               <input
                 v-model="post.newComment"
@@ -115,7 +97,6 @@
 
 <script>
 import api from "@/api/axios";
-import { store } from "@/store.js";
 
 export default {
   name: "FeedPage",
@@ -131,184 +112,75 @@ export default {
   },
   computed: {
     filteredPosts() {
-      return this.posts.filter(post => {
-        const q = this.searchQuery.trim().toLowerCase();
+      return this.posts.filter((p) => {
+        const q = this.searchQuery.toLowerCase();
         const matchesSearch =
-          !q ||
-          post.title.toLowerCase().includes(q) ||
-          post.excerpt.toLowerCase().includes(q);
-        const matchesCategory = this.selectedCategory
-          ? post.category === this.selectedCategory
-          : true;
+          (p.title || "").toLowerCase().includes(q) ||
+          ((p.excerpt || p.body || "").toLowerCase().includes(q));
+        const matchesCategory = this.selectedCategory ? p.category === this.selectedCategory : true;
         return matchesSearch && matchesCategory;
       });
     },
     sortedPosts() {
-      const sorted = [...this.filteredPosts];
-      if (this.sortOption === "date-new") {
-        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      } else if (this.sortOption === "date-old") {
-        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      } else if (this.sortOption === "title") {
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
-      }
-      return sorted;
+      const arr = [...this.filteredPosts];
+      if (this.sortOption === "date-new") arr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      else if (this.sortOption === "date-old") arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      else if (this.sortOption === "title") arr.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      return arr;
     }
   },
   methods: {
     async fetchPosts() {
-  try {
-    const { data } = await api.get("/api/posts");
-    // Normalize: mock returns { posts: [...] }, real API may return [...]
-    const list = Array.isArray(data) ? data : (data && data.posts) || [];
-    this.posts = list.length ? list : this.generateSamplePosts();
-  } catch (e) {
-    console.error("Error fetching posts, falling back to samples:", e);
-    this.posts = this.generateSamplePosts();
-  } finally {
-    this.loading = false;
-  }
-},
-    filterPosts() {
-      // left for future analytics/logging
+      try {
+        const { status, data } = await api.get("/api/posts");
+        if (status === 200) {
+          // Accept either {posts:[...]} (mock on Pages) OR a raw array (real API)
+          const list = Array.isArray(data) ? data : (data && data.posts) || [];
+          this.posts = list.length ? list : this.samplePosts();
+        } else {
+          this.posts = this.samplePosts();
+        }
+      } catch (e) {
+        this.posts = this.samplePosts();
+      } finally {
+        this.loading = false;
+      }
     },
-    formatDate(date) {
-      return new Date(date).toLocaleDateString();
+    noop() {},
+    formatDate(d) { return new Date(d).toLocaleDateString(); },
+    toggleLike(p) { p.liked = !p.liked; p.likes = (p.likes || 0) + (p.liked ? 1 : -1); },
+    toggleComments(p) { p.showComments = !p.showComments; },
+    submitComment(p) {
+      if (!p.newComment || !p.newComment.trim()) return;
+      p.comments = p.comments || [];
+      p.comments.push({ id: Date.now(), author: "You", text: p.newComment.trim() });
+      p.newComment = "";
     },
-    toggleLike(post) {
-      post.liked = !post.liked;
-      post.likes += post.liked ? 1 : -1;
-    },
-    toggleComments(post) {
-      post.showComments = !post.showComments;
-    },
-    submitComment(post) {
-      if (!post.newComment || !post.newComment.trim()) return;
-      const newComment = {
-        _id: Date.now().toString(),
-        author: "CurrentUser",
-        text: post.newComment.trim()
-      };
-      post.comments.push(newComment);
-      store.user.comments.push({ text: newComment.text, postTitle: post.title });
-      post.newComment = "";
-    },
-    generateSamplePosts() {
+    samplePosts() {
       return [
         {
-          _id: "1",
-          title: "Breaking into Software Engineering",
-          excerpt: "A guide to starting your career in software engineering.",
-          content: "Full content for post 1...",
-          image: "https://picsum.photos/seed/post1/600/400",
-          articleUrl: "https://github.com/npmaile/blog/blob/main/posts/2.%20How%20to%20get%20into%20software.md",
-          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          category: "Software Engineering",
-          likes: 12,
-          liked: false,
-          comments: [{ _id: "c1", author: "Alice", text: "Great guide!" }],
-          newComment: "",
-          showComments: false
-        },
-        {
-          _id: "2",
-          title: "A Beginner’s Guide to Cloud Computing",
-          excerpt: "An introduction to the basics of cloud infrastructure.",
-          content: "Full content for post 2...",
-          image: "https://picsum.photos/seed/post2/600/400",
-          articleUrl: "https://www.ibm.com/think/topics/cloud-computing",
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          category: "Cloud",
-          likes: 25,
-          liked: false,
-          comments: [{ _id: "c2", author: "Bob", text: "Very informative!" }],
-          newComment: "",
-          showComments: false
-        },
-        {
-          _id: "3",
-          title: "The Future of AI: Trends to Watch",
-          excerpt: "Exploring emerging trends in artificial intelligence.",
-          content: "Full content for post 3...",
-          image: "https://picsum.photos/seed/post3/600/400",
-          articleUrl: "https://sloanreview.mit.edu/article/five-trends-in-ai-and-data-science-for-2025/",
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          id: 1,
+          title: "Welcome to DevHub (Demo)",
+          body: "This is a static demo running on GitHub Pages.",
+          image: "https://picsum.photos/seed/devhub1/800/400",
+          createdAt: new Date().toISOString(),
           category: "Tech News",
-          likes: 30,
-          liked: false,
-          comments: [{ _id: "c3", author: "Carol", text: "Exciting future!" }],
-          newComment: "",
-          showComments: false
-        },
-        {
-          _id: "4",
-          title: "Top DevOps Tools: Docker, Kubernetes, Terraform",
-          excerpt: "An overview of essential DevOps tools for building and managing cloud-native apps.",
-          content: "Full content for post 4...",
-          image: "https://picsum.photos/seed/post4/600/400",
-          articleUrl: "https://www.env0.com/blog/top-devops-tools-for-infrastructure-automation",
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          category: "Cloud",
           likes: 15,
-          liked: false,
-          comments: [],
-          newComment: "",
-          showComments: false
+          comments: []
         },
         {
-          _id: "5",
-          title: "Securing Cloud Environments in 2025",
-          excerpt: "Learn key strategies to protect your cloud systems from evolving cyber threats.",
-          content: "Full content for post 5...",
-          image: "https://picsum.photos/seed/post5/600/400",
-          articleUrl: "https://www.charterglobal.com/cloud-security-best-practices/",
-          createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+          id: 2,
+          title: "Top DevOps Tools: Docker, Kubernetes, Terraform",
+          body: "Essential tools for cloud-native apps.",
+          image: "https://picsum.photos/seed/devhub2/800/400",
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
           category: "Cloud",
-          likes: 18,
-          liked: false,
-          comments: [],
-          newComment: "",
-          showComments: false
-        },
-        {
-          _id: "6",
-          title: "Containerization Best Practices for Modern Applications",
-          excerpt: "Tips and best practices for using Docker and container technologies effectively.",
-          content: "Full content for post 6...",
-          image: "https://picsum.photos/seed/post6/600/400",
-          articleUrl: "https://www.tenable.com/blog/mastering-containerization-key-strategies-and-best-practices",
-          createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-          category: "Cloud",
-          likes: 22,
-          liked: false,
-          comments: [],
-          newComment: "",
-          showComments: false
-        },
-        {
-          _id: "7",
-          title: "Strategies for Database Scaling in the Cloud",
-          excerpt: "Explore techniques for scaling your databases to meet growing demand in cloud environments.",
-          content: "Full content for post 7...",
-          image: "https://picsum.photos/seed/post7/600/400",
-          articleUrl: "https://karandeepsingh.ca/posts/leveraging-devops-cloud-database-scaling/",
-          createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-          category: "Cloud",
-          likes: 14,
-          liked: false,
-          comments: [{ _id: "c4", author: "Frank", text: "Very informative!" }],
-          newComment: "",
-          showComments: false
+          likes: 8,
+          comments: []
         }
       ];
     }
   },
-  mounted() {
-    this.fetchPosts();
-  }
+  mounted() { this.fetchPosts(); }
 };
 </script>
-
-<style scoped>
-/* Additional styling if needed */
-</style>
