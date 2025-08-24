@@ -1,132 +1,68 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-8">
-    <div class="bg-white dark:bg-gray-800 p-8 rounded shadow-md w-full max-w-lg">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Create a New Post</h2>
-      <form @submit.prevent="createPost" class="space-y-4">
-        <div>
-          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="title">Title</label>
-          <input
-            id="title"
-            v-model="title"
-            type="text"
-            required
-            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
-                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          />
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-10">
+    <div class="max-w-3xl mx-auto px-4">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Create Post</h1>
+      <form @submit.prevent="onSubmit" class="space-y-4">
+        <input v-model="title" type="text" placeholder="Title" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" required />
+        <input v-model="excerpt" type="text" placeholder="Excerpt" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" required />
+        <textarea v-model="content" rows="6" placeholder="Content" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" required></textarea>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input v-model="category" type="text" placeholder="Category (e.g., Tech News)" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" />
+          <input v-model="imageUrl" type="url" placeholder="Image URL (optional)" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" />
         </div>
-        <div>
-          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="content">Content</label>
-          <textarea
-            id="content"
-            v-model="content"
-            rows="5"
-            required
-            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
-                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          ></textarea>
+        <input v-model="articleUrl" type="url" placeholder="External Article URL (optional)" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" />
+        <div class="flex items-center space-x-3">
+          <button type="submit" class="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Publish</button>
+          <button type="button" @click="cancel" class="px-5 py-2 rounded bg-gray-200 dark:bg-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 text-black">Cancel</button>
         </div>
-        <div>
-          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="image">
-            Image URL (required)
-          </label>
-          <input
-            id="image"
-            v-model="image"
-            type="url"
-            required
-            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
-                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            placeholder="https://example.com/image.jpg"
-          />
-        </div>
-        <div>
-          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-1" for="articleLink">
-            Article Link (required)
-          </label>
-          <input
-            id="articleLink"
-            v-model="articleLink"
-            type="url"
-            required
-            class="w-full p-3 border rounded focus:outline-none focus:ring-2 
-                   focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            placeholder="https://example.com/article"
-          />
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-green-500 hover:bg-green-600 text-white p-3 rounded"
-        >
-          Create Post
-        </button>
       </form>
-
-      <div v-if="errorMessage" class="text-red-500 mt-4">
-        {{ errorMessage }}
-      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { store } from "@/store.js";
+import { seedDemoIfNeeded, readDemo, writeDemo, newId } from "@/demo/demoData";
 
 export default {
   name: "CreatePost",
   data() {
     return {
       title: "",
+      excerpt: "",
       content: "",
-      image: "",
-      articleLink: "",
-      errorMessage: ""
+      category: "",
+      imageUrl: "",
+      articleUrl: ""
     };
   },
   methods: {
-    createPost() {
-      // Basic validation
-      if (!this.title || !this.content || !this.image || !this.articleLink) {
-        this.errorMessage = "All fields are required, including image & link.";
-        return;
-      }
-      // Construct new post
-      const newPost = {
-        _id: Date.now().toString(),
-        title: this.title,
-        content: this.content,
-        excerpt: this.content.slice(0, 80) + "...",
-        image: this.image,
-        articleUrl: this.articleLink,
+    onSubmit() {
+      seedDemoIfNeeded();
+      const state = readDemo() || { user: { comments: [] }, posts: [] };
+      const post = {
+        id: newId(),
+        title: this.title.trim(),
+        excerpt: this.excerpt.trim(),
+        content: this.content.trim(),
+        image: this.imageUrl.trim() || "",
+        articleUrl: this.articleUrl.trim() || "",
         createdAt: new Date().toISOString(),
-        category: "Cloud",
+        category: this.category.trim() || "Software Engineering",
         likes: 0,
         liked: false,
-        comments: [],
-        newComment: "",
-        showComments: false
+        comments: []
       };
-
-      // Add to store.feed
-      store.feed.push(newPost);
-      // Also add to user’s posts
-      store.user.posts.push(newPost);
-
-      // Clear form
-      this.title = "";
-      this.content = "";
-      this.image = "";
-      this.articleLink = "";
-      this.errorMessage = "";
-
-      // Redirect to feed
-      this.$router.push("/feed");
+      state.posts = [post, ...(state.posts || [])];
+      writeDemo(state);
+      if (typeof window !== "undefined") {
+        window.location.hash = "#/feed";
+        window.location.reload();
+      }
+    },
+    cancel() {
+      if (this.$router) this.$router.back();
+      else if (typeof window !== "undefined") window.history.back();
     }
   }
 };
 </script>
-
-<style scoped>
-/* Keep your original styling for light mode. 
-   The .dark overrides are minimal. */
-</style>
