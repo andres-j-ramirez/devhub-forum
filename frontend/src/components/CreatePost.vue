@@ -40,6 +40,7 @@ export default {
       seedDemoIfNeeded();
       const state = readDemo() || { user: { comments: [] }, posts: [] };
       const post = {
+        author: "You",
         id: newId(),
         title: this.title.trim(),
         excerpt: this.excerpt.trim(),
