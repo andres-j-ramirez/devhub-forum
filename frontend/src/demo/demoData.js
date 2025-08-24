@@ -10,7 +10,7 @@ export function newId() {
 
 function ph(title) {
   const t = encodeURIComponent(title);
-  return `https://placehold.co/1024x480/png?text=${t}`;
+  return `https://placehold.co/1024x480/EEE/333?text=${t}`;
 }
 
 function samplePosts() {
@@ -33,7 +33,7 @@ function samplePosts() {
       title: "Top DevOps Tools: Docker, Kubernetes, Terraform",
       excerpt: "Essential tools for cloud-native apps.",
       content: "A tour through modern DevOps tooling and why each matters.",
-      image: ph("DevOps • Docker • K8s • Terraform"),
+      image: ph("Docker Kubernetes Terraform"),
       articleUrl: "https://www.env0.com/blog/top-devops-tools-for-infrastructure-automation",
       createdAt: nowMinus(2),
       category: "Cloud",
@@ -46,7 +46,7 @@ function samplePosts() {
       title: "The Future of AI: Trends to Watch",
       excerpt: "Emerging trends in AI to keep an eye on.",
       content: "Foundation models, agents, and responsible AI in practice.",
-      image: ph("AI • Trends"),
+      image: ph("AI Trends"),
       articleUrl: "https://sloanreview.mit.edu/article/five-trends-in-ai-and-data-science-for-2025/",
       createdAt: nowMinus(3),
       category: "Tech News",
@@ -72,7 +72,7 @@ function samplePosts() {
       title: "Containerization Best Practices",
       excerpt: "Tips for effective Docker usage.",
       content: "Small images, SBOMs, static scans, and runtime policies.",
-      image: ph("Docker • Containers"),
+      image: ph("Docker Containers"),
       articleUrl: "https://www.tenable.com/blog/mastering-containerization-key-strategies-and-best-practices",
       createdAt: nowMinus(5),
       category: "Cloud",
@@ -98,7 +98,7 @@ function samplePosts() {
       title: "Database Scaling in the Cloud",
       excerpt: "Techniques for scaling databases as demand grows.",
       content: "Sharding vs read replicas, caching, and profilers.",
-      image: ph("Cloud Databases • Scaling"),
+      image: ph("Database Scaling"),
       articleUrl: "https://karandeepsingh.ca/posts/leveraging-devops-cloud-database-scaling/",
       createdAt: nowMinus(7),
       category: "Cloud",
@@ -111,7 +111,7 @@ function samplePosts() {
       title: "CI/CD Tips for Small Teams",
       excerpt: "Keep pipelines fast, observable, and boring.",
       content: "Cache well, fail fast, parallelize, and protect main.",
-      image: ph("CI/CD • Pipelines"),
+      image: ph("CI CD Pipelines"),
       articleUrl: "https://martinfowler.com/bliki/ContinuousDelivery.html",
       createdAt: nowMinus(8),
       category: "Software Engineering",
