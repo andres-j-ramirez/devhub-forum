@@ -1,31 +1,30 @@
 // src/api/axios.js
 import axios from "axios";
 
-// Base URL: use explicit prod base if provided; else '' on Pages; else localhost.
-const explicitBase = process.env.VUE_APP_API_BASE || "";
-const base =
-  explicitBase
-    ? explicitBase.replace(/\/+$/, "") // trim trailing slash
-    : (typeof window !== "undefined" && /\.github\.io$/.test(window.location.hostname))
-      ? ""     // same-origin on Pages when no explicit base
-      : "http://localhost:5001";
+// If VUE_APP_API_BASE is set, ALWAYS use it (even on GitHub Pages).
+// Otherwise: on GitHub Pages use same-origin (''), or fallback to local dev.
+const envBase = (process.env.VUE_APP_API_BASE || "").trim();
+const onPages = typeof window !== "undefined" && /\.github\.io$/.test(window.location.hostname);
+
+const base = envBase
+  ? envBase.replace(/\/+$/, "")                      // strip trailing slash
+  : (onPages ? "" : "http://localhost:5001");        // demo on Pages, local in dev
 
 const api = axios.create({
-  baseURL: base,  // e.g. https://devhub-alb-522...elb.amazonaws.com
+  baseURL: base,
   withCredentials: false,
 });
 
-// ---- Demo mocks only if we're on Pages AND no explicit base was given ----
-const onPages = typeof window !== "undefined" && /\.github\.io$/.test(window.location.hostname);
-const useMocks = onPages && !explicitBase;
-
-if (useMocks) {
+// ---- Demo mocks ONLY if we’re on Pages AND no env base was provided ----
+if (onPages && !envBase) {
   api.interceptors.request.use((config) => {
     const method = (config.method || "get").toLowerCase();
     const url = config.url || "";
 
     let data = config.data;
-    if (typeof data === "string") { try { data = JSON.parse(data); } catch { data = {}; } }
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch { data = {}; }
+    }
     data = data || {};
 
     // Mock: POST /api/auth/login
@@ -49,8 +48,20 @@ if (useMocks) {
           status: 200,
           data: {
             posts: [
-              { id: 1, title: "Welcome to DevHub (Demo)", body: "This is a static demo running on GitHub Pages.", author: "Admin", createdAt: new Date().toISOString() },
-              { id: 2, title: "Tip: Dark Mode", body: "Use the switch in the navbar to toggle themes.", author: "Admin", createdAt: new Date().toISOString() },
+              {
+                id: 1,
+                title: "Welcome to DevHub (Demo)",
+                body: "This is a static demo running on GitHub Pages.",
+                author: "Admin",
+                createdAt: new Date().toISOString(),
+              },
+              {
+                id: 2,
+                title: "Tip: Dark Mode",
+                body: "Use the switch in the navbar to toggle themes.",
+                author: "Admin",
+                createdAt: new Date().toISOString(),
+              },
             ],
           },
         },
@@ -62,7 +73,9 @@ if (useMocks) {
 
   api.interceptors.response.use(
     (r) => r,
-    (err) => (err && err.__mock && err.response) ? Promise.resolve(err.response) : Promise.reject(err)
+    (err) => (err && err.__mock && err.response)
+      ? Promise.resolve(err.response)
+      : Promise.reject(err)
   );
 }
 
