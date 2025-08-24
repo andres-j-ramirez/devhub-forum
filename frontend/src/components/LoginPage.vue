@@ -1,83 +1,51 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-    <div class="max-w-md w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg p-8">
-      <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">Log In</h2>
-
-      <form @submit.prevent="loginUser" class="space-y-4">
-        <input
-          v-model="email"
-          type="email"
-          placeholder="Email"
-          required
-          class="w-full p-3 rounded border focus:ring-2 focus:ring-blue-500 text-black dark:bg-gray-600 dark:text-white"
-        />
-        <input
-          v-model="password"
-          type="password"
-          placeholder="Password"
-          required
-          class="w-full p-3 rounded border focus:ring-2 focus:ring-blue-500 text-black dark:bg-gray-600 dark:text-white"
-        />
-        <button type="submit" class="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600">
-          Log In
-        </button>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-10">
+    <div class="max-w-md mx-auto px-4">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Log in</h1>
+      <form @submit.prevent="onSubmit" class="space-y-4">
+        <input v-model="email" type="email" placeholder="Email" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" required />
+        <input v-model="password" type="password" placeholder="Password" class="w-full p-3 border rounded dark:border-gray-700 dark:bg-gray-800 dark:text-white text-black" required />
+        <button type="submit" class="w-full px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Log in</button>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Demo: test@example.com / devhub
+        </p>
+        <p v-if="error" class="text-sm text-red-600 mt-2">{{ error }}</p>
       </form>
-
-      <div v-if="errorMessage" class="text-red-500 mt-4">
-        {{ errorMessage }}
-      </div>
-
-      <div class="text-center mt-4">
-        <router-link to="/register" class="text-sm text-blue-600 hover:underline dark:text-blue-400">
-          Don't have an account? Register
-        </router-link>
-      </div>
     </div>
   </div>
 </template>
 
 <script>
-import api from "../api/axios";
+import { seedDemoIfNeeded } from "@/demo/demoData";
+import { isDemoHost, loginDemo } from "@/demo/demoAuth";
 
 export default {
   name: "LoginPage",
   data() {
-    return {
-      email: "",
-      password: "",
-      errorMessage: ""
-    };
+    return { email: "", password: "", error: "" };
   },
   methods: {
-    async loginUser() {
-      this.errorMessage = "";
+    async onSubmit() {
+      seedDemoIfNeeded();
+      if (isDemoHost()) {
+        const token = loginDemo(this.email, this.password);
+        if (!token) { this.error = "Invalid demo credentials."; return; }
+        if (this.$router) this.$router.push({ path: "/feed" });
+        else if (typeof window !== "undefined") window.location.hash = "#/feed";
+        return;
+      }
       try {
-        const { status, data } = await api.post("/api/auth/login", {
-          email: this.email,
-          password: this.password
-        });
-
-        if (status === 200 && data && data.token) {
-          localStorage.setItem("token", data.token);
-          this.$router.push(this.$route.query.redirect || "/feed");
+        const res = await this.$axios.post("/api/auth/login", { email: this.email, password: this.password });
+        if (res && res.data && res.data.token) {
+          localStorage.setItem("auth_token", res.data.token);
+          this.$router.push({ path: "/feed" });
         } else {
-          this.errorMessage = "Invalid email or password.";
+          this.error = "Login failed.";
         }
-      } catch {
-        this.errorMessage = "Invalid email or password.";
+      } catch (e) {
+        this.error = "Login failed.";
       }
     }
-  },
-  beforeRouteEnter(to, from, next) {
-    next(() => {
-      if (!to.query.redirect) {
-        try { localStorage.removeItem("token"); } catch {}
-      }
-    });
   }
 };
 </script>
-
-<style scoped>
-/* Uses global .dark styles from <html class="dark"> */
-</style>
