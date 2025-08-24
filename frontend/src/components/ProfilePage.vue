@@ -1,139 +1,122 @@
 <template>
-  <div class="max-w-3xl mx-auto py-8 px-4">
-    <div v-if="loading" class="text-gray-500">Loading post…</div>
-
-    <div v-else-if="error" class="text-red-600">
-      {{ error }}
-    </div>
-
-    <article v-else class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-        {{ post.title }}
-      </h1>
-      <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        By {{ post.author || 'Anonymous' }} • {{ formatDate(post.createdAt) }}
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-10">
+    <div class="max-w-4xl mx-auto px-4 space-y-8">
+      <div class="flex items-center space-x-4">
+        <img :src="user.avatar" alt="" class="w-16 h-16 rounded-full object-cover border" />
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">@{{ user.username }}</h1>
+          <p class="text-gray-600 dark:text-gray-300">{{ user.bio }}</p>
+        </div>
+        <div class="ml-auto">
+          <ResetDemoButton />
+        </div>
       </div>
 
-      <img
-        v-if="post.image"
-        :src="post.image"
-        alt="Post image"
-        class="w-full h-64 object-cover rounded mb-4"
-      />
-
-      <p class="text-gray-800 dark:text-gray-200 leading-relaxed mb-6">
-        {{ post.body || post.excerpt }}
-      </p>
-
-      <!-- Comments -->
-      <section class="mt-8">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-          Comments ({{ (post.comments && post.comments.length) || 0 }})
-        </h2>
-
-        <div v-if="post.comments && post.comments.length" class="space-y-3 mb-4">
-          <div
-            v-for="c in post.comments"
-            :key="c._id || c.id"
-            class="border-b border-gray-200 dark:border-gray-700 pb-3"
-          >
-            <strong class="text-gray-800 dark:text-gray-100">
-              {{ c.author || 'User' }}:
-            </strong>
-            <span class="text-gray-700 dark:text-gray-300"> {{ c.text }} </span>
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Posts</div>
+          <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{ myPosts.length }}</div>
         </div>
-
-        <div class="flex gap-2">
-          <input
-            v-model="newComment"
-            type="text"
-            placeholder="Write a comment…"
-            class="flex-1 p-2 border rounded dark:border-gray-600 dark:bg-gray-700 dark:text-white text-black"
-            @keyup.enter="submitComment"
-          />
-          <button
-            @click="submitComment"
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Add
-          </button>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Likes</div>
+          <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{ likedPosts.length }}</div>
         </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Comments</div>
+          <div class="text-2xl font-semibold text-gray-900 dark:text-white">{{ myComments.length }}</div>
+        </div>
+      </div>
+
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Liked Posts</h2>
+        <div v-if="likedPosts.length === 0" class="text-gray-500 dark:text-gray-400">No likes yet.</div>
+        <ul v-else class="space-y-3">
+          <li v-for="p in likedPosts" :key="p.id" class="bg-white dark:bg-gray-800 rounded p-4 shadow">
+            <div class="font-medium text-gray-900 dark:text-white">{{ p.title }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(p.createdAt) }} • {{ p.category }}</div>
+          </li>
+        </ul>
       </section>
-    </article>
+
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Your Comments</h2>
+        <div v-if="myComments.length === 0" class="text-gray-500 dark:text-gray-400">No comments yet.</div>
+        <ul v-else class="space-y-3">
+          <li v-for="c in myComments" :key="c.id" class="bg-white dark:bg-gray-800 rounded p-4 shadow">
+            <div class="text-gray-800 dark:text-gray-100">{{ c.text }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              on <span class="font-medium">{{ c.postTitle }}</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Your Posts</h2>
+        <div v-if="myPosts.length === 0" class="text-gray-500 dark:text-gray-400">You haven't created any posts yet.</div>
+        <ul v-else class="space-y-3">
+          <li v-for="p in myPosts" :key="p.id" class="bg-white dark:bg-gray-800 rounded p-4 shadow">
+            <div class="font-medium text-gray-900 dark:text-white">{{ p.title }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ formatDate(p.createdAt) }} • {{ p.category }}</div>
+          </li>
+        </ul>
+      </section>
+    </div>
   </div>
 </template>
 
 <script>
-import api from "@/api/axios";
+import ResetDemoButton from "@/components/ResetDemoButton.vue";
+import { seedDemoIfNeeded, readDemo } from "@/demo/demoData";
 
 export default {
-  name: "PostView",
-  props: {
-    // Optional: if parent passes a post object directly
-    postProp: { type: Object, default: null }
-  },
+  name: "ProfilePage",
+  components: { ResetDemoButton },
   data() {
     return {
-      post: this.postProp || null,
-      loading: !this.postProp,
-      error: "",
-      newComment: ""
+      user: { username: "", avatar: "", bio: "" },
+      posts: []
     };
   },
-  methods: {
-    async loadPost() {
-      this.loading = true;
-      this.error = "";
-      try {
-        // Allow id from route param or query (?id=)
-        const id = this.$route.params.id || this.$route.query.id || (this.post && this.post._id);
-        if (!id) throw new Error("No post id provided.");
-
-        const { status, data } = await api.get(`/api/posts/${id}`);
-        if (status === 200 && data) {
-          // Accept either a raw post object or {post: {...}}
-          this.post = data.post || data;
-        } else {
-          throw new Error(`Unexpected response (${status}).`);
-        }
-      } catch (e) {
-        console.error(e);
-        this.error = "Unable to load this post.";
-      } finally {
-        this.loading = false;
-      }
+  computed: {
+    likedPosts() {
+      return this.posts.filter((p) => p.liked);
     },
-    async submitComment() {
-      const text = (this.newComment || "").trim();
-      if (!text || !this.post || !this.post._id) return;
-
-      try {
-        const { status, data } = await api.post(`/api/posts/${this.post._id}/comments`, { text });
-        if (status === 201 && data) {
-          this.post.comments = this.post.comments || [];
-          this.post.comments.push({
-            _id: data._id || data.id || String(Date.now()),
-            author: data.author || "You",
-            text: data.text || text
-          });
-          this.newComment = "";
+    myComments() {
+      const out = [];
+      for (const p of this.posts) {
+        for (const c of p.comments || []) {
+          if ((c.author || "").toLowerCase() === "you") {
+            out.push({ ...c, postId: p.id, postTitle: p.title });
+          }
         }
-      } catch (e) {
-        console.error(e);
-        // Keep it silent in demo; optionally show a toast here
       }
+      return out;
     },
-    formatDate(d) {
-      try {
-        return new Date(d).toLocaleDateString();
-      } catch {
-        return "";
-      }
+    myPosts() {
+      return this.posts.filter((p) => (p.author || "").toLowerCase() === "you");
     }
   },
+  methods: {
+    load() {
+      seedDemoIfNeeded();
+      const s = readDemo() || { user: {}, posts: [] };
+      this.user = s.user || {};
+      this.posts = s.posts || [];
+    },
+    formatDate(d) {
+      return new Date(d).toLocaleDateString();
+    }
+  },
+  beforeRouteEnter(to, from, next) {
+    next((vm) => vm.load());
+  },
+  beforeRouteUpdate(to, from, next) {
+    this.load();
+    next();
+  },
   mounted() {
-    if (!this.post) this.loadPost();
+    this.load();
   }
 };
 </script>
