@@ -8,10 +8,8 @@ export function newId() {
   return (Date.now().toString(36) + Math.random().toString(36).slice(2)).toUpperCase();
 }
 
-function ph(title) {
-  const t = encodeURIComponent(title);
-  return `https://placehold.co/1024x480/EEE/333?text=${t}`;
-}
+const BASE = process.env.BASE_URL || "/";
+const img = (n) => `${BASE}demo-img/${n}.jpg`;
 
 function samplePosts() {
   return [
@@ -20,7 +18,7 @@ function samplePosts() {
       title: "Welcome to DevHub (Demo)",
       excerpt: "This is a static demo running on GitHub Pages.",
       content: "Welcome! Browse posts, like, and add comments. Use the Reset button to restore the seed.",
-      image: ph("DevHub Demo"),
+      image: img(1),
       articleUrl: "https://github.com/andres-j-ramirez/devhub-forum",
       createdAt: nowMinus(1),
       category: "Tech News",
@@ -33,7 +31,7 @@ function samplePosts() {
       title: "Top DevOps Tools: Docker, Kubernetes, Terraform",
       excerpt: "Essential tools for cloud-native apps.",
       content: "A tour through modern DevOps tooling and why each matters.",
-      image: ph("Docker Kubernetes Terraform"),
+      image: img(2),
       articleUrl: "https://www.env0.com/blog/top-devops-tools-for-infrastructure-automation",
       createdAt: nowMinus(2),
       category: "Cloud",
@@ -46,7 +44,7 @@ function samplePosts() {
       title: "The Future of AI: Trends to Watch",
       excerpt: "Emerging trends in AI to keep an eye on.",
       content: "Foundation models, agents, and responsible AI in practice.",
-      image: ph("AI Trends"),
+      image: img(3),
       articleUrl: "https://sloanreview.mit.edu/article/five-trends-in-ai-and-data-science-for-2025/",
       createdAt: nowMinus(3),
       category: "Tech News",
@@ -59,7 +57,7 @@ function samplePosts() {
       title: "Securing Cloud Environments in 2025",
       excerpt: "Key strategies to protect cloud systems from evolving threats.",
       content: "Identity first, least privilege, and runtime protection.",
-      image: ph("Cloud Security"),
+      image: img(4),
       articleUrl: "https://www.charterglobal.com/cloud-security-best-practices/",
       createdAt: nowMinus(4),
       category: "Cloud",
@@ -72,7 +70,7 @@ function samplePosts() {
       title: "Containerization Best Practices",
       excerpt: "Tips for effective Docker usage.",
       content: "Small images, SBOMs, static scans, and runtime policies.",
-      image: ph("Docker Containers"),
+      image: img(5),
       articleUrl: "https://www.tenable.com/blog/mastering-containerization-key-strategies-and-best-practices",
       createdAt: nowMinus(5),
       category: "Cloud",
@@ -85,7 +83,7 @@ function samplePosts() {
       title: "Breaking into Software Engineering",
       excerpt: "A practical guide to landing your first role.",
       content: "Projects > courses. Ship things. Tell the story.",
-      image: ph("Software Engineering"),
+      image: img(6),
       articleUrl: "https://github.com/npmaile/blog/blob/main/posts/2.%20How%20to%20get%20into%20software.md",
       createdAt: nowMinus(6),
       category: "Software Engineering",
@@ -98,7 +96,7 @@ function samplePosts() {
       title: "Database Scaling in the Cloud",
       excerpt: "Techniques for scaling databases as demand grows.",
       content: "Sharding vs read replicas, caching, and profilers.",
-      image: ph("Database Scaling"),
+      image: img(7),
       articleUrl: "https://karandeepsingh.ca/posts/leveraging-devops-cloud-database-scaling/",
       createdAt: nowMinus(7),
       category: "Cloud",
@@ -111,7 +109,7 @@ function samplePosts() {
       title: "CI/CD Tips for Small Teams",
       excerpt: "Keep pipelines fast, observable, and boring.",
       content: "Cache well, fail fast, parallelize, and protect main.",
-      image: ph("CI CD Pipelines"),
+      image: img(8),
       articleUrl: "https://martinfowler.com/bliki/ContinuousDelivery.html",
       createdAt: nowMinus(8),
       category: "Software Engineering",
@@ -126,7 +124,7 @@ function initialState() {
   return {
     user: {
       username: "andresramirez",
-      avatar: "https://i.pravatar.cc/150?img=12",
+      avatar: `${BASE}demo-img/1.jpg`,
       bio: "Cloud-native engineer. I build and ship things.",
       comments: []
     },
